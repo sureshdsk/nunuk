@@ -10,6 +10,7 @@ from app.agent import Agent
 from app.config import DEFAULT_MODEL
 from app.exceptions import AgentError
 from app.llm import LLMClient
+from app.repl import run as repl
 from app.tools import ToolRegistry
 
 
@@ -48,35 +49,6 @@ def doctor() -> int:
         print("OK")
         return 0
     return 1
-
-
-def repl() -> int:
-    try:
-        llm = LLMClient()
-        tools = ToolRegistry.with_defaults()
-        agent = Agent(llm, tools)
-    except AgentError as e:
-        print(str(e), file=sys.stderr)
-        return 1
-
-    while True:
-        try:
-            line = input("> ")
-        except (EOFError, KeyboardInterrupt):
-            print()
-            return 0
-
-        line = line.strip()
-        if not line:
-            continue
-        if line == "/exit":
-            return 0
-
-        try:
-            result = agent.run(line)
-            print(result)
-        except AgentError as e:
-            print(str(e), file=sys.stderr)
 
 
 def main() -> int:
