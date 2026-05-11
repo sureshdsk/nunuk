@@ -14,6 +14,23 @@ SYSTEM_PROMPT = "You are a helpful, concise coding assistant."
 MAX_RETRIES = 10
 RETRY_BASE_DELAY = 0.5
 
+ECHO_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "Echo",
+        "description": "Echoes back the input text.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "The text to echo back"}
+            },
+            "required": ["text"],
+        },
+    },
+}
+
+TOOLS = [ECHO_TOOL]
+
 
 def doctor() -> int:
     load_dotenv()
@@ -62,6 +79,36 @@ def _base_url() -> str:
     return OPENROUTER_BASE_URL
 
 
+def _call_with_retry(client, model, messages, tools=None):
+    response = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            kwargs = {"model": model, "messages": messages}
+            if tools:
+                kwargs["tools"] = tools
+            response = client.chat.completions.create(**kwargs)
+            break
+        except APIStatusError as exc:
+            if exc.status_code == 429 or exc.status_code >= 500:
+                delay = min(2 ** attempt * RETRY_BASE_DELAY, 8)
+                print(
+                    f"retry {attempt + 1}/{MAX_RETRIES}: {exc.status_code}, waiting {delay:.1f}s",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+                continue
+            raise
+
+    if response is None:
+        print(
+            f"error: max retries ({MAX_RETRIES}) exceeded, giving up",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    return response
+
+
 def chat(prompt: str) -> str:
     load_dotenv()
     api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -76,41 +123,17 @@ def chat(prompt: str) -> str:
         {"role": "user", "content": prompt},
     ]
 
-    stream = None
-    for attempt in range(MAX_RETRIES):
-        try:
-            stream = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=True,
-            )
-            break
-        except APIStatusError as exc:
-            if exc.status_code == 429 or exc.status_code >= 500:
-                delay = min(2 ** attempt * RETRY_BASE_DELAY, 8)
-                print(
-                    f"retry {attempt + 1}/{MAX_RETRIES}: {exc.status_code}, waiting {delay:.1f}s",
-                    file=sys.stderr,
-                )
-                time.sleep(delay)
-                continue
-            raise
+    response = _call_with_retry(client, model, messages, tools=TOOLS)
+    message = response.choices[0].message
 
-    if stream is None:
-        print(
-            f"error: max retries ({MAX_RETRIES}) exceeded, giving up",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    if message.tool_calls:
+        for tc in message.tool_calls:
+            print(f"tool call requested: {tc.function.name}")
+        return ""
 
-    collected = []
-    for chunk in stream:
-        delta = getattr(chunk.choices[0].delta, "content", None) or ""
-        if delta:
-            print(delta, end="", flush=True)
-            collected.append(delta)
-    print()
-    return "".join(collected)
+    content = message.content or ""
+    print(content)
+    return content
 
 
 def main() -> int:
