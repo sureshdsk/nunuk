@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -52,7 +53,27 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "Bash",
+            "description": "Execute a bash command and return its output.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "The bash command to execute.",
+                    }
+                },
+                "required": ["command"],
+            },
+        },
+    },
 ]
+
+
+BASH_TIMEOUT = 30
 
 
 def _base_url() -> str:
@@ -127,6 +148,25 @@ def _execute_tool(name: str, args: dict) -> str:
         with open(path, "w") as f:
             f.write(content)
         return f"Wrote {path}"
+    if name == "Bash":
+        command = args.get("command", "")
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=BASH_TIMEOUT,
+                check=False,
+            )
+            output = result.stdout
+            if result.stderr:
+                output += f"\nstderr: {result.stderr}"
+            if result.returncode != 0:
+                output += f"\nexit code: {result.returncode}"
+            return output or "(no output)"
+        except subprocess.TimeoutExpired:
+            return f"error: command timed out after {BASH_TIMEOUT}s"
     return f"unknown tool: {name}"
 
 
