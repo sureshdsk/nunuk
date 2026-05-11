@@ -1,4 +1,6 @@
 import os
+import re
+import shutil
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -245,6 +247,120 @@ class GlobTool(Tool):
             return f"error: {e}"
 
 
+class GrepTool(Tool):
+    @property
+    def name(self) -> str:
+        return "Grep"
+
+    @property
+    def schema(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": "Grep",
+                "description": (
+                    "Search file contents for a regex pattern. "
+                    "Uses ripgrep (rg) when available, falls back to Python re."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "pattern": {
+                            "type": "string",
+                            "description": "Regular expression pattern to search for.",
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Directory or file to search in. Defaults to current working directory.",
+                        },
+                        "glob": {
+                            "type": "string",
+                            "description": "File glob to filter, e.g. '*.py'. Searches all files if omitted.",
+                        },
+                        "output_mode": {
+                            "type": "string",
+                            "description": (
+                                "'files_with_matches' to list file paths only, "
+                                "'content' to show matching lines with line numbers (default)."
+                            ),
+                        },
+                    },
+                    "required": ["pattern"],
+                },
+            },
+        }
+
+    def execute(self, args: dict) -> str:
+        pattern = args.get("pattern", "")
+        search_path = args.get("path", ".")
+        glob_filter = args.get("glob")
+        output_mode = args.get("output_mode", "content")
+
+        if shutil.which("rg"):
+            return self._run_rg(pattern, search_path, glob_filter, output_mode)
+        return self._run_python(pattern, search_path, glob_filter, output_mode)
+
+    def _run_rg(
+        self, pattern: str, path: str, glob_filter: str | None, output_mode: str
+    ) -> str:
+        cmd = ["rg", "--no-heading", "--with-filename", "--line-number"]
+        if output_mode == "files_with_matches":
+            cmd.append("-l")
+        if glob_filter:
+            cmd.extend(["--glob", glob_filter])
+        cmd.extend(["--", pattern, path])
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=BASH_TIMEOUT, check=False
+            )
+            if result.returncode == 1:
+                return "No matches found."
+            if result.returncode != 0:
+                return f"error: {result.stderr.strip()}"
+            return result.stdout.rstrip("\n")
+        except subprocess.TimeoutExpired:
+            return f"error: grep timed out after {BASH_TIMEOUT}s"
+
+    def _run_python(
+        self, pattern: str, path: str, glob_filter: str | None, output_mode: str
+    ) -> str:
+        try:
+            regex = re.compile(pattern)
+        except re.error as e:
+            return f"error: invalid regex: {e}"
+
+        base = Path(path).resolve()
+        if not base.exists():
+            return f"error: path not found: {path}"
+        if base.is_file():
+            files = [base]
+        else:
+            glob_pattern = f"**/{glob_filter}" if glob_filter else "**/*"
+            files = [p for p in base.glob(glob_pattern) if p.is_file()]
+
+        results = []
+        for fpath in files:
+            try:
+                with open(fpath) as f:
+                    lines = f.readlines()
+            except Exception:
+                continue
+            matches = []
+            for i, line in enumerate(lines, 1):
+                if regex.search(line):
+                    matches.append((i, line.rstrip("\n")))
+            if matches:
+                if output_mode == "files_with_matches":
+                    results.append(str(fpath))
+                else:
+                    for lineno, content in matches:
+                        results.append(f"{fpath}:{lineno}:{content}")
+
+        if not results:
+            return "No matches found."
+        return "\n".join(results)
+
+
 class BashTool(Tool):
     @property
     def name(self) -> str:
@@ -315,5 +431,6 @@ class ToolRegistry:
         registry.register(WriteTool())
         registry.register(EditTool())
         registry.register(GlobTool())
+        registry.register(GrepTool())
         registry.register(BashTool())
         return registry
