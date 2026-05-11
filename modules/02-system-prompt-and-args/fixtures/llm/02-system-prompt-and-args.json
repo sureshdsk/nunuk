@@ -1,0 +1,11 @@
+{
+  "name": "brevity-response",
+  "description": "Returns a brief response to Eiffel Tower questions.",
+  "responses": [
+    {
+      "match": {"last_user_message_contains": "Eiffel"},
+      "response": {"content": "The Eiffel Tower is an iron tower in Paris, France."}
+    }
+  ],
+  "on_unmatched": "error"
+}

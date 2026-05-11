@@ -1,0 +1,22 @@
+module: 02-system-prompt-and-args
+description: "Module 02 — system prompt and args"
+prerequisites: [01]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  MOCK_LLM_FIXTURE: "fixtures/llm/02-system-prompt-and-args.json"
+
+tests:
+  - name: "system prompt enforces brevity"
+    type: agent-prompt
+    prompt: "Tell me about the Eiffel Tower."
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stdout length under 200 chars (system prompt asks for brevity)
+      - {type: exit_code, equals: 0}
+      - {type: stdout_contains, text: "Eiffel Tower"}
