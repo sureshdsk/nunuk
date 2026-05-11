@@ -10,19 +10,19 @@ class Agent:
     def __init__(self, llm: LLMClient, tools: ToolRegistry):
         self._llm = llm
         self._tools = tools
+        self._messages: list[dict] = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+        ]
 
     def run(self, prompt: str) -> str:
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ]
+        self._messages.append({"role": "user", "content": prompt})
 
         for _ in range(MAX_ITERATIONS):
             response = self._llm.create(
-                messages, tools=self._tools.schemas
+                self._messages, tools=self._tools.schemas
             )
             message = response.choices[0].message
-            messages.append(message.model_dump(exclude_none=True))
+            self._messages.append(message.model_dump(exclude_none=True))
 
             if not message.tool_calls:
                 return message.content or ""
@@ -33,7 +33,7 @@ class Agent:
                     result = self._tools.execute(tc.function.name, args)
                 except Exception as e:
                     result = f"tool error: {e}"
-                messages.append(
+                self._messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": tc.id,

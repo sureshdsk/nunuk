@@ -50,6 +50,35 @@ def doctor() -> int:
     return 1
 
 
+def repl() -> int:
+    try:
+        llm = LLMClient()
+        tools = ToolRegistry.with_defaults()
+        agent = Agent(llm, tools)
+    except AgentError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+
+    while True:
+        try:
+            line = input("> ")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+
+        line = line.strip()
+        if not line:
+            continue
+        if line == "/exit":
+            return 0
+
+        try:
+            result = agent.run(line)
+            print(result)
+        except AgentError as e:
+            print(str(e), file=sys.stderr)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="agent", description="Course coding agent.")
     parser.add_argument("--doctor", action="store_true", help="Verify the dev environment.")
@@ -71,8 +100,7 @@ def main() -> int:
             print(str(e), file=sys.stderr)
             return 1
 
-    parser.print_help()
-    return 0
+    return repl()
 
 
 if __name__ == "__main__":
