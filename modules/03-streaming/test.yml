@@ -1,0 +1,23 @@
+module: 03-streaming
+description: "Module 03 — streaming"
+prerequisites: [02]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  MOCK_LLM_FIXTURE: "fixtures/llm/03-streaming.json"
+
+tests:
+  - name: "tokens stream progressively"
+    type: agent-prompt
+    prompt: "Tell me a one-line story."
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching duration_gt_seconds 0.4 (mock fixture has 100ms inter-chunk delay across 5 chunks); output correct
+      - {type: exit_code, equals: 0}
+      - {type: duration_gt_seconds, value: 0.4}
+      - {type: stdout_contains, text: "Once upon a time"}

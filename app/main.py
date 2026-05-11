@@ -69,14 +69,23 @@ def chat(prompt: str) -> str:
     client = OpenAI(api_key=api_key, base_url=_base_url())
     model = os.environ.get("MODEL", DEFAULT_MODEL)
 
-    response = client.chat.completions.create(
+    stream = client.chat.completions.create(
         model=model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
+        stream=True,
     )
-    return response.choices[0].message.content or ""
+
+    collected = []
+    for chunk in stream:
+        delta = getattr(chunk.choices[0].delta, "content", None) or ""
+        if delta:
+            print(delta, end="", flush=True)
+            collected.append(delta)
+    print()
+    return "".join(collected)
 
 
 def main() -> int:
@@ -89,7 +98,7 @@ def main() -> int:
         return doctor()
 
     if args.prompt:
-        print(chat(args.prompt))
+        chat(args.prompt)
         return 0
 
     parser.print_help()
