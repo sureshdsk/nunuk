@@ -5,8 +5,10 @@ import subprocess
 import sys
 
 from dotenv import load_dotenv
+from openai import OpenAI
 
 DEFAULT_MODEL = "anthropic/claude-haiku-4.5"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 def doctor() -> int:
@@ -46,6 +48,33 @@ def doctor() -> int:
     return 1
 
 
+def _base_url() -> str:
+    if os.environ.get("LLM_PROVIDER") == "mock":
+        url = os.environ.get("MOCK_LLM_BASE_URL")
+        if not url:
+            print("MOCK_LLM_BASE_URL must be set when LLM_PROVIDER=mock", file=sys.stderr)
+            sys.exit(1)
+        return url
+    return OPENROUTER_BASE_URL
+
+
+def chat(prompt: str) -> str:
+    load_dotenv()
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        print("OPENROUTER_API_KEY is not set", file=sys.stderr)
+        sys.exit(1)
+
+    client = OpenAI(api_key=api_key, base_url=_base_url())
+    model = os.environ.get("MODEL", DEFAULT_MODEL)
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.choices[0].message.content or ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="agent", description="Course coding agent.")
     parser.add_argument("--doctor", action="store_true", help="Verify the dev environment.")
@@ -56,7 +85,8 @@ def main() -> int:
         return doctor()
 
     if args.prompt:
-        raise NotImplementedError("chat() lands in module 01.")
+        print(chat(args.prompt))
+        return 0
 
     parser.print_help()
     return 0
