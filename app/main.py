@@ -3,13 +3,16 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import APIStatusError, OpenAI
 
 DEFAULT_MODEL = "anthropic/claude-haiku-4.5"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 SYSTEM_PROMPT = "You are a helpful, concise coding assistant."
+MAX_RETRIES = 10
+RETRY_BASE_DELAY = 0.5
 
 
 def doctor() -> int:
@@ -66,17 +69,39 @@ def chat(prompt: str) -> str:
         print("OPENROUTER_API_KEY is not set", file=sys.stderr)
         sys.exit(1)
 
-    client = OpenAI(api_key=api_key, base_url=_base_url())
+    client = OpenAI(api_key=api_key, base_url=_base_url(), max_retries=0)
     model = os.environ.get("MODEL", DEFAULT_MODEL)
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": prompt},
+    ]
 
-    stream = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        stream=True,
-    )
+    stream = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            stream = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=True,
+            )
+            break
+        except APIStatusError as exc:
+            if exc.status_code == 429 or exc.status_code >= 500:
+                delay = min(2 ** attempt * RETRY_BASE_DELAY, 8)
+                print(
+                    f"retry {attempt + 1}/{MAX_RETRIES}: {exc.status_code}, waiting {delay:.1f}s",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+                continue
+            raise
+
+    if stream is None:
+        print(
+            f"error: max retries ({MAX_RETRIES}) exceeded, giving up",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     collected = []
     for chunk in stream:
