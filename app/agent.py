@@ -19,14 +19,22 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "Read",
-            "description": "Read the contents of a file.",
+            "description": "Read file contents with cat -n style line numbers. Supports pagination via offset and limit.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "file_path": {
                         "type": "string",
                         "description": "Path to the file to read.",
-                    }
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "1-based starting line number. Defaults to 1.",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of lines to return. Defaults to all lines.",
+                    },
                 },
                 "required": ["file_path"],
             },
@@ -129,12 +137,31 @@ def _validate_path(path: str) -> str:
     return ""
 
 
+def _is_binary(path: str) -> bool:
+    try:
+        with open(path, "rb") as f:
+            chunk = f.read(8192)
+        return b"\x00" in chunk
+    except Exception:
+        return False
+
+
 def _execute_tool(name: str, args: dict) -> str:
     if name == "Read":
         path = args.get("file_path", "")
         try:
+            if _is_binary(path):
+                return f"error: binary file: {path}"
             with open(path) as f:
-                return f.read()
+                lines = f.readlines()
+            offset = args.get("offset", 1)
+            limit = args.get("limit", len(lines))
+            start = max(offset - 1, 0)
+            end = min(start + limit, len(lines))
+            numbered = []
+            for i in range(start, end):
+                numbered.append(f"{i + 1:>6}\t{lines[i]}")
+            return "".join(numbered)
         except FileNotFoundError:
             return f"error: file not found: {path}"
         except Exception as e:
