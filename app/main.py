@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -109,6 +110,12 @@ def _call_with_retry(client, model, messages, tools=None):
     return response
 
 
+def _execute_tool(name: str, args: dict) -> str:
+    if name == "Echo":
+        return args.get("text", "")
+    return f"unknown tool: {name}"
+
+
 def chat(prompt: str) -> str:
     load_dotenv()
     api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -127,9 +134,18 @@ def chat(prompt: str) -> str:
     message = response.choices[0].message
 
     if message.tool_calls:
+        messages.append(message.model_dump(exclude_none=True))
         for tc in message.tool_calls:
             print(f"tool call requested: {tc.function.name}")
-        return ""
+            result = _execute_tool(tc.function.name, json.loads(tc.function.arguments))
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": result,
+            })
+
+        response = _call_with_retry(client, model, messages, tools=TOOLS)
+        message = response.choices[0].message
 
     content = message.content or ""
     print(content)
