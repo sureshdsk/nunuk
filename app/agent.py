@@ -98,6 +98,16 @@ def _call_with_retry(client, model, messages, tools=None):
     return response
 
 
+def _validate_path(path: str) -> str:
+    resolved = os.path.realpath(path)
+    cwd = os.path.realpath(os.getcwd())
+    if ".." in os.path.normpath(path).split(os.sep):
+        return f"error: path traversal denied: {path}"
+    if not resolved.startswith(cwd + os.sep) and resolved != cwd:
+        return f"error: path escapes workspace: {path}"
+    return ""
+
+
 def _execute_tool(name: str, args: dict) -> str:
     if name == "Read":
         path = args.get("file_path", "")
@@ -111,6 +121,9 @@ def _execute_tool(name: str, args: dict) -> str:
     if name == "Write":
         path = args.get("file_path", "")
         content = args.get("content", "")
+        err = _validate_path(path)
+        if err:
+            return err
         with open(path, "w") as f:
             f.write(content)
         return f"Wrote {path}"
