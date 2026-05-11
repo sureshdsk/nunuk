@@ -133,6 +133,66 @@ class WriteTool(Tool):
         return ""
 
 
+class EditTool(Tool):
+    @property
+    def name(self) -> str:
+        return "Edit"
+
+    @property
+    def schema(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": "Edit",
+                "description": (
+                    "Replace an exact string in a file. "
+                    "Fails if old_string is not found or appears more than once."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "file_path": {
+                            "type": "string",
+                            "description": "Path to the file to edit.",
+                        },
+                        "old_string": {
+                            "type": "string",
+                            "description": "The exact string to replace.",
+                        },
+                        "new_string": {
+                            "type": "string",
+                            "description": "The replacement string.",
+                        },
+                    },
+                    "required": ["file_path", "old_string", "new_string"],
+                },
+            },
+        }
+
+    def execute(self, args: dict) -> str:
+        path = args.get("file_path", "")
+        old_string = args.get("old_string", "")
+        new_string = args.get("new_string", "")
+        try:
+            with open(path) as f:
+                content = f.read()
+        except FileNotFoundError:
+            return f"error: file not found: {path}"
+        except Exception as e:
+            return f"error: {e}"
+
+        count = content.count(old_string)
+        if count == 0:
+            return f"error: old_string not found in {path}"
+        if count > 1:
+            return f"error: old_string appears {count} times in {path}; must be unique"
+
+        updated = content.replace(old_string, new_string, 1)
+        with open(path, "w") as f:
+            f.write(updated)
+        return f"Edited {path}"
+
+
 class BashTool(Tool):
     @property
     def name(self) -> str:
@@ -201,5 +261,6 @@ class ToolRegistry:
         registry = cls()
         registry.register(ReadTool())
         registry.register(WriteTool())
+        registry.register(EditTool())
         registry.register(BashTool())
         return registry
