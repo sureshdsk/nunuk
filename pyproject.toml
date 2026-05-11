@@ -1,0 +1,12 @@
+[project]
+name = "nunuk-agent"
+version = "0.1.0"
+description = "Build-your-own coding agent (course implementation)"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=2.15.0",
+    "python-dotenv>=1.0.1",
+]
+
+[tool.uv]
+package = false
