@@ -6,9 +6,11 @@ import sys
 
 from dotenv import load_dotenv
 
-from app.agent import run
-
-DEFAULT_MODEL = "anthropic/claude-haiku-4.5"
+from app.agent import Agent
+from app.config import DEFAULT_MODEL
+from app.exceptions import AgentError
+from app.llm import LLMClient
+from app.tools import ToolRegistry
 
 
 def doctor() -> int:
@@ -58,9 +60,16 @@ def main() -> int:
         return doctor()
 
     if args.prompt:
-        result = run(args.prompt)
-        print(result)
-        return 0
+        try:
+            llm = LLMClient()
+            tools = ToolRegistry.with_defaults()
+            agent = Agent(llm, tools)
+            result = agent.run(args.prompt)
+            print(result)
+            return 0
+        except AgentError as e:
+            print(str(e), file=sys.stderr)
+            return 1
 
     parser.print_help()
     return 0

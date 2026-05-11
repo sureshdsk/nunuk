@@ -7,11 +7,36 @@ This documents the design decisions made while implementing modules 05 through 1
 ```
 app/
 ├── __init__.py
-├── main.py          # entry point: doctor(), CLI parsing, calls agent.run()
-└── agent.py         # agent loop, tools, retry logic, LLM client
+├── main.py          # CLI entry point: doctor(), error handling, wires Agent together
+├── config.py        # All constants (models, URLs, limits, timeouts)
+├── exceptions.py    # AgentError → ConfigurationError, MaxRetriesExceeded, IterationCapReached
+├── llm.py           # LLMClient: OpenAI client creation, base URL resolution, retry logic
+├── tools.py         # Tool ABC, ReadTool, WriteTool, BashTool, ToolRegistry
+└── agent.py         # Agent: loop composing LLMClient + ToolRegistry
 ```
 
-`main.py` is a thin shell (~70 lines): it parses args and delegates to `doctor()` or `agent.run()`. All agent intelligence lives in `agent.py` (~237 lines).
+### Dependency graph
+
+```
+main.py
+├── agent.py (Agent)
+│   ├── llm.py (LLMClient)
+│   │   ├── config.py
+│   │   └── exceptions.py (ConfigurationError, MaxRetriesExceeded)
+│   ├── tools.py (ToolRegistry)
+│   │   └── config.py
+│   ├── config.py
+│   └── exceptions.py (IterationCapReached)
+└── config.py (DEFAULT_MODEL for doctor)
+```
+
+Each module has a single responsibility:
+- **`config.py`** — Pure constants. No imports from other app modules.
+- **`exceptions.py`** — Error hierarchy. No imports from other app modules.
+- **`llm.py`** — LLM communication. Raises typed exceptions instead of calling `sys.exit()`.
+- **`tools.py`** — Tool definitions + execution. Self-contained; each tool is a class.
+- **`agent.py`** — Orchestrates the loop. Depends on `LLMClient` and `ToolRegistry` via composition.
+- **`main.py`** — CLI parsing, `doctor()`, and centralized `try/except AgentError` handler.
 
 ## Module-by-module decisions
 
@@ -81,6 +106,28 @@ Pagination uses 1-based `offset` (matching editor line numbers) and `limit` (max
 | `RETRY_BASE_DELAY` | 0.5 | 04 | Base delay in seconds for exponential backoff |
 | `MAX_ITERATIONS` | 25 | 07 | Agent loop iteration cap |
 | `BASH_TIMEOUT` | 30 | 09 | Bash command timeout in seconds |
+
+## Classes
+
+| Class | Module | Responsibility |
+|---|---|---|
+| `LLMClient` | `llm.py` | OpenAI client creation, base URL resolution, exponential backoff retry |
+| `Tool` | `tools.py` | Abstract base: `name`, `schema`, `execute()` |
+| `ReadTool` | `tools.py` | File reading with pagination, `cat -n` numbering, binary detection |
+| `WriteTool` | `tools.py` | File writing with path traversal validation |
+| `BashTool` | `tools.py` | Shell command execution with timeout |
+| `ToolRegistry` | `tools.py` | Registers tools, exposes schemas, dispatches execution |
+| `Agent` | `agent.py` | Loop: LLM call → tool dispatch → result → repeat until done |
+
+## Exceptions
+
+| Exception | Raised by | When |
+|---|---|---|
+| `ConfigurationError` | `LLMClient.__init__` | Missing `OPENROUTER_API_KEY` or `MOCK_LLM_BASE_URL` |
+| `MaxRetriesExceeded` | `LLMClient.create` | 429/5xx retry cap exhausted |
+| `IterationCapReached` | `Agent.run` | Agent loop exceeded `MAX_ITERATIONS` |
+
+All inherit from `AgentError`. `main.py` catches `AgentError` at the top level, prints to stderr, and exits 1.
 
 ## Merge commits
 
