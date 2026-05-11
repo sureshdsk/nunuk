@@ -1,0 +1,20 @@
+{
+  "name": "streaming-story",
+  "description": "Returns a streaming story across 5 chunks with 100ms delay.",
+  "responses": [
+    {
+      "match": {"last_user_message_contains": "story"},
+      "stream": true,
+      "chunk_delay_ms": 100,
+      "chunks": [
+        {"delta": {"content": "Once "}},
+        {"delta": {"content": "upon "}},
+        {"delta": {"content": "a "}},
+        {"delta": {"content": "time, "}},
+        {"delta": {"content": "a robot learned to code."}},
+        {"finish_reason": "stop"}
+      ]
+    }
+  ],
+  "on_unmatched": "error"
+}
