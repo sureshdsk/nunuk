@@ -1,6 +1,7 @@
 import os
 import subprocess
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from app.config import BASH_TIMEOUT
 
@@ -193,6 +194,57 @@ class EditTool(Tool):
         return f"Edited {path}"
 
 
+class GlobTool(Tool):
+    @property
+    def name(self) -> str:
+        return "Glob"
+
+    @property
+    def schema(self) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": "Glob",
+                "description": (
+                    "Fast file pattern matching tool. Returns matching paths "
+                    "sorted by modification time (most recent first)."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "pattern": {
+                            "type": "string",
+                            "description": "Glob pattern, e.g. '**/*.py' or 'src/*.ts'.",
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Directory to search in. Defaults to current working directory.",
+                        },
+                    },
+                    "required": ["pattern"],
+                },
+            },
+        }
+
+    def execute(self, args: dict) -> str:
+        pattern = args.get("pattern", "")
+        search_path = args.get("path", ".")
+        base = Path(search_path).resolve()
+        if not base.is_dir():
+            return f"error: not a directory: {search_path}"
+        try:
+            matches = sorted(
+                base.glob(pattern),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
+            if not matches:
+                return "No files matched the pattern."
+            return "\n".join(str(m) for m in matches)
+        except Exception as e:
+            return f"error: {e}"
+
+
 class BashTool(Tool):
     @property
     def name(self) -> str:
@@ -262,5 +314,6 @@ class ToolRegistry:
         registry.register(ReadTool())
         registry.register(WriteTool())
         registry.register(EditTool())
+        registry.register(GlobTool())
         registry.register(BashTool())
         return registry
