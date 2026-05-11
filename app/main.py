@@ -9,6 +9,7 @@ from openai import OpenAI
 
 DEFAULT_MODEL = "anthropic/claude-haiku-4.5"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+SYSTEM_PROMPT = "You are a helpful, concise coding assistant."
 
 
 def doctor() -> int:
@@ -70,7 +71,10 @@ def chat(prompt: str) -> str:
 
     response = client.chat.completions.create(
         model=model,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
     )
     return response.choices[0].message.content or ""
 
