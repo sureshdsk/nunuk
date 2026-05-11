@@ -1,0 +1,83 @@
+module: 28-project-memory
+description: "Module 28 — Auto-discover CLAUDE.md/AGENTS.md/SOUL.md/CONVENTIONS.md/.cursorrules/copilot-instructions.md with dedup and byte budget"
+prerequisites: [27]
+
+setup:
+  workspace: fresh
+
+env:
+  LLM_PROVIDER: mock
+
+tests:
+  - name: "single CLAUDE.md is found"
+    type: agent-prompt
+    prompt: "What is this project's name?"
+    timeout_seconds: 30
+    setup:
+      workspace: fresh
+      copy_fixtures:
+        - {from: "fixtures/projects/claude-only", to: "./"}
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/echo-name.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: llm_request_contains, text: "Project: Nunuk"}
+
+  - name: "multiple files discovered and dividered"
+    type: agent-prompt
+    prompt: "Summarize the team conventions"
+    timeout_seconds: 30
+    setup:
+      workspace: fresh
+      copy_fixtures:
+        - {from: "fixtures/projects/multi-context-files", to: "./"}
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/echo-conventions.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: llm_request_contains, text: "# === CLAUDE.md ==="}
+      - {type: llm_request_contains, text: "# === AGENTS.md ==="}
+
+  - name: "identical content is de-duplicated"
+    type: agent-prompt
+    prompt: "Hello"
+    timeout_seconds: 30
+    setup:
+      workspace: fresh
+      copy_fixtures:
+        - {from: "fixtures/projects/dedup-context-files", to: "./"}
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/hello.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: llm_request_match_count, text: "shared body marker", equals: 1}
+
+  - name: "parent directory walk works"
+    type: agent-prompt
+    prompt: "Where's the project root?"
+    timeout_seconds: 30
+    setup:
+      workspace: fresh
+      copy_fixtures:
+        - {from: "fixtures/projects/parent-walk", to: "./"}
+      cwd: "./sub"
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/echo-name.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: llm_request_contains, text: "Project root marker"}
+
+  - name: "byte budget caps injection"
+    type: agent-prompt
+    prompt: "Hello"
+    timeout_seconds: 30
+    setup:
+      workspace: fresh
+      copy_fixtures:
+        - {from: "fixtures/projects/large-claude", to: "./"}
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/hello.json"
+      AGENT_MEMORY_BUDGET_BYTES: "4096"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: llm_request_size_lt_bytes, key: "system", bytes: 8192}

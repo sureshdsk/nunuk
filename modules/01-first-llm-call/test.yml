@@ -1,0 +1,41 @@
+module: 01-first-llm-call
+description: "Module 01 — single chat completion via OpenAI SDK + OpenRouter base_url"
+prerequisites: [00]
+
+setup:
+  workspace: fresh
+
+env:
+  LLM_PROVIDER: mock
+  MOCK_LLM_FIXTURE: "fixtures/llm/say-hello.json"
+
+tests:
+  - name: "prints assistant response"
+    type: agent-prompt
+    prompt: "Say exactly: hello"
+    timeout_seconds: 15
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: stdout_contains, text: "hello"}
+      - {type: llm_call_count, equals: 1}
+
+  - name: "uses MOCK_LLM_BASE_URL when mock mode"
+    type: agent-prompt
+    prompt: "Say exactly: hello"
+    timeout_seconds: 15
+    assertions:
+      - {type: exit_code, equals: 0}
+      # The mock-LLM server records every request it received; if the agent
+      # talked to OpenRouter directly, llm_call_count would be 0.
+      - {type: llm_call_count, min: 1}
+      - {type: no_network}
+
+  - name: "fails clearly when API key missing"
+    type: agent-prompt
+    prompt: "anything"
+    timeout_seconds: 10
+    env_overrides:
+      OPENROUTER_API_KEY: ""
+    assertions:
+      - {type: exit_code, not_equals: 0}
+      - {type: stderr_contains, text: "OPENROUTER_API_KEY"}

@@ -1,0 +1,21 @@
+module: 11-edit-tool
+description: "Module 11 — edit tool"
+prerequisites: [10]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/11-edit-tool.json"
+
+tests:
+  - name: "rename foo to bar"
+    type: agent-prompt
+    prompt: "In code.py, rename the variable foo to bar"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching file_contains code.py 'bar'; file_absent_text code.py 'foo'
+      - {type: exit_code, equals: 0}

@@ -1,0 +1,44 @@
+module: 00-setup
+description: "Module 00 — Verify dev environment via agent --doctor"
+prerequisites: []
+
+setup:
+  workspace: fresh
+
+env:
+  # Module 00 doesn't talk to an LLM; mock-LLM mode irrelevant here.
+  # Tests set their own env to simulate healthy and broken environments.
+  MODEL: "anthropic/claude-haiku-4.5"
+
+tests:
+  - name: "doctor exits 0 on healthy env"
+    type: command
+    command: "./agent --doctor"
+    timeout_seconds: 10
+    env_overrides:
+      OPENROUTER_API_KEY: "test-key-not-real"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: stdout_contains, text: "OK"}
+
+  - name: "doctor reports each check"
+    type: command
+    command: "./agent --doctor"
+    timeout_seconds: 10
+    env_overrides:
+      OPENROUTER_API_KEY: "test-key-not-real"
+    assertions:
+      - {type: stdout_contains, text: "python:"}
+      - {type: stdout_contains, text: "uv:"}
+      - {type: stdout_contains, text: "OPENROUTER_API_KEY:"}
+      - {type: stdout_contains, text: "MODEL:"}
+
+  - name: "doctor exits non-zero when key missing"
+    type: command
+    command: "./agent --doctor"
+    timeout_seconds: 10
+    env_overrides:
+      OPENROUTER_API_KEY: ""
+    assertions:
+      - {type: exit_code, not_equals: 0}
+      - {type: stdout_contains, text: "OPENROUTER_API_KEY: missing FAIL"}

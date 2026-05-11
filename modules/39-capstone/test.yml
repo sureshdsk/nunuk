@@ -1,0 +1,96 @@
+module: 39-capstone
+description: "Module 39 — Capstone: 10 realistic coding tasks end-to-end"
+prerequisites: [38]
+
+setup:
+  workspace: fresh
+
+env:
+  LLM_PROVIDER: mock
+  # Per-task fixture is set in env_overrides on each test below.
+
+tests:
+  - name: "task-01 add argparse"
+    type: agent-prompt
+    prompt: "Add a --name CLI argument to greet.py using argparse. Default to 'world'."
+    timeout_seconds: 60
+    setup:
+      workspace: fresh
+      copy_fixtures:
+        - {from: "fixtures/projects/capstone/01-add-argparse", to: "./"}
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/capstone/01.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: file_contains, path: "greet.py", text: "argparse"}
+      - type: command
+        run: "python greet.py --name Alice"
+        stdout_contains: "hello, Alice"
+
+  - name: "task-02 fix failing test"
+    type: agent-prompt
+    prompt: "There's a failing test in test_calc.py. Fix the implementation in calc.py so the test passes."
+    timeout_seconds: 60
+    setup:
+      workspace: fresh
+      copy_fixtures:
+        - {from: "fixtures/projects/capstone/02-fix-test", to: "./"}
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/capstone/02.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - type: command
+        run: "pytest -q"
+        exit_code: 0
+
+  # Tasks 03-10 follow the same shape; see fixtures/projects/capstone/ and
+  # fixtures/llm/capstone/. Authoring deferred to the runner-implementation
+  # phase since each task needs a recorded LLM transcript.
+
+  - name: "task-03 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "task-04 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "task-05 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "task-06 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "task-07 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "task-08 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "task-09 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "task-10 placeholder"
+    type: command
+    command: "true"
+    assertions:
+      - {type: exit_code, equals: 0}

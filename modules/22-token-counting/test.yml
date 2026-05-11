@@ -1,0 +1,21 @@
+module: 22-token-counting
+description: "Module 22 — token counting"
+prerequisites: [21]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/22-token-counting.json"
+
+tests:
+  - name: "token counter visible"
+    type: agent-prompt
+    prompt: "Hello"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stderr or status line contains 'tokens:' followed by a number
+      - {type: exit_code, equals: 0}

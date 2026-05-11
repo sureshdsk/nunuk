@@ -1,0 +1,21 @@
+module: 13-grep-tool
+description: "Module 13 — grep tool"
+prerequisites: [12]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/13-grep-tool.json"
+
+tests:
+  - name: "grep TODO"
+    type: agent-prompt
+    prompt: "Find every TODO in the codebase"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching tool_call_sequence contains Grep; stdout includes the TODO matches
+      - {type: exit_code, equals: 0}

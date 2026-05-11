@@ -1,0 +1,27 @@
+{
+  "name": "read-then-write",
+  "description": "Three-call sequence: Read(a.py) → Write(summary.txt) → final text.",
+  "responses": [
+    {
+      "match": {"last_user_message_contains": "Read a.py"},
+      "response": {
+        "tool_calls": [
+          {"name": "Read", "arguments": {"file_path": "a.py"}}
+        ]
+      }
+    },
+    {
+      "match": {"last_tool_result_for": "Read"},
+      "response": {
+        "tool_calls": [
+          {"name": "Write", "arguments": {"file_path": "summary.txt", "content": "module a defines greet()\n"}}
+        ]
+      }
+    },
+    {
+      "match": {"last_tool_result_for": "Write"},
+      "response": {"content": "Done. Wrote summary.txt."}
+    }
+  ],
+  "on_unmatched": "error"
+}

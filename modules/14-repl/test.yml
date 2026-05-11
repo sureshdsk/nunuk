@@ -1,0 +1,22 @@
+module: 14-repl
+description: "Module 14 — repl"
+prerequisites: [13]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/14-repl.json"
+
+tests:
+  - name: "history persists across turns"
+    type: repl-session
+    turns:
+      # TODO: list turns; each {send: "...", assert_contains: "..."} optionally followed by /exit
+      - send: "hello"
+      - send: "/exit"
+    assertions:
+      - {type: exit_code, equals: 0}

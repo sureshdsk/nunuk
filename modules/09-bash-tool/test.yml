@@ -1,0 +1,21 @@
+module: 09-bash-tool
+description: "Module 09 — bash tool"
+prerequisites: [08]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/09-bash-tool.json"
+
+tests:
+  - name: "ls returns directory listing"
+    type: agent-prompt
+    prompt: "Run `ls` and tell me what you see"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stdout contains 'a.py'; tool_call_sequence contains Bash
+      - {type: exit_code, equals: 0}

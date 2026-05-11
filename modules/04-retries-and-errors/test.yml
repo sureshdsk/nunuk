@@ -1,0 +1,21 @@
+module: 04-retries-and-errors
+description: "Module 04 — retries and errors"
+prerequisites: [03]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/04-retries-and-errors.json"
+
+tests:
+  - name: "retries on 429 then succeeds"
+    type: agent-prompt
+    prompt: "Hello"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching exit 0; llm_call_count exactly 3 (mock returns 429, 429, 200)
+      - {type: exit_code, equals: 0}

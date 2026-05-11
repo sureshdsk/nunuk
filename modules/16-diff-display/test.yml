@@ -1,0 +1,21 @@
+module: 16-diff-display
+description: "Module 16 — diff display"
+prerequisites: [15]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/16-diff-display.json"
+
+tests:
+  - name: "diff shown before write"
+    type: agent-prompt
+    prompt: "Add a comment to the top of code.py"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stdout contains '+# ' and '---' before tool execution
+      - {type: exit_code, equals: 0}

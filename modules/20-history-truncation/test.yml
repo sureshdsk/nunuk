@@ -1,0 +1,21 @@
+module: 20-history-truncation
+description: "Module 20 — history truncation"
+prerequisites: [19]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/20-history-truncation.json"
+
+tests:
+  - name: "long history truncates"
+    type: agent-prompt
+    prompt: "[after many turns]"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching llm request body has fewer than N messages; system message preserved
+      - {type: exit_code, equals: 0}

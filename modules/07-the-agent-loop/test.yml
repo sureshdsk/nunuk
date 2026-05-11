@@ -1,0 +1,56 @@
+module: 07-the-agent-loop
+description: "Module 07 — multi-turn agent loop with iteration cap"
+prerequisites: [00, 01, 02, 03, 04, 05, 06]
+
+setup:
+  workspace: fresh
+  copy_fixtures:
+    - {from: "fixtures/projects/three-files", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+
+tests:
+  - name: "three-step loop terminates"
+    type: agent-prompt
+    prompt: "Read a.py, write its summary to summary.txt"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/read-then-write.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: file_exists, path: "summary.txt"}
+      - {type: file_contains, path: "summary.txt", text: "module a"}
+      - {type: llm_call_count, equals: 3}
+      - type: tool_call_sequence
+        ordered: true
+        contains:
+          - {name: "Read", args_match: {file_path: "a.py"}}
+          - {name: "Write", args_match: {file_path: "summary.txt"}}
+
+  - name: "iteration cap fires on infinite tool calls"
+    type: agent-prompt
+    prompt: "loop forever"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/infinite-read.json"
+    assertions:
+      - {type: exit_code, not_equals: 0}
+      - {type: stderr_contains, text: "iteration"}
+
+  - name: "tool result message has correct shape"
+    type: agent-prompt
+    prompt: "Read a.py, write its summary to summary.txt"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/read-then-write.json"
+    assertions:
+      # The mock-LLM transcript captures every request body the agent sent.
+      # On the second call (after the Read result), the request must include
+      # a role=tool message with the matching tool_call_id.
+      - type: tool_call_args_match
+        # On request #2, message at index -1 must be role=tool with non-empty content.
+        # (Schema details TBD; intent is: introspect the transcript.)
+        request_index: 1
+        jsonpath: "$.messages[-1].role"
+        equals: "tool"

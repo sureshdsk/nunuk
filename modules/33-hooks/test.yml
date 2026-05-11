@@ -1,0 +1,22 @@
+module: 33-hooks
+description: "Module 33 — hooks"
+prerequisites: [32]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/33-hooks.json"
+
+tests:
+  - name: "PreToolUse fires before Write"
+    type: hook-trigger
+    hook_config: "fixtures/hooks/sentinel.json"
+    prompt: "Write 'hi' to out.txt"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with hook_fired and side-effect assertions
+      - {type: hook_fired, name: "PreToolUse", count: 1}

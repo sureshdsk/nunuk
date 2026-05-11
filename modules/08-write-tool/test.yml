@@ -1,0 +1,21 @@
+module: 08-write-tool
+description: "Module 08 — write tool"
+prerequisites: [07]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/08-write-tool.json"
+
+tests:
+  - name: "Write to output.txt"
+    type: agent-prompt
+    prompt: "Write 'hello world' to output.txt"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching file_equals output.txt 'hello world'
+      - {type: exit_code, equals: 0}

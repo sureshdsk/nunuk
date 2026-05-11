@@ -1,0 +1,48 @@
+module: 25-structured-output
+description: "Module 25 — Force the final assistant response to validate against a JSON Schema; fall back to re-prompting when the provider lacks native support"
+prerequisites: [24]
+
+setup:
+  workspace: fresh
+  copy_fixtures:
+    - {from: "fixtures/schemas", to: "schemas/"}
+
+env:
+  LLM_PROVIDER: mock
+
+tests:
+  - name: "valid response matches schema"
+    type: agent-prompt
+    prompt: "Review app.py"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/valid-review.json"
+      MOCK_PROVIDER_WIRE: "openai"
+    cli_args: ["--output-schema", "schemas/code-review.json"]
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: stdout_matches_regex, pattern: "\"score\"\\s*:\\s*\\d+"}
+
+  - name: "invalid response triggers re-prompt under fallback"
+    type: agent-prompt
+    prompt: "Review app.py"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/invalid-then-valid.json"
+      MOCK_PROVIDER_WIRE: "fallback"
+    cli_args: ["--output-schema", "schemas/code-review.json"]
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: llm_call_count, equals: 2}
+
+  - name: "invalid response with native support fails fast"
+    type: agent-prompt
+    prompt: "Review app.py"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/invalid-only.json"
+      MOCK_PROVIDER_WIRE: "openai"
+    cli_args: ["--output-schema", "schemas/code-review.json"]
+    assertions:
+      - {type: exit_code, not_equals: 0}
+      - {type: stderr_contains, text: "schema"}

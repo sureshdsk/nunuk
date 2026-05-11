@@ -1,0 +1,64 @@
+module: 24-provider-abstraction
+description: "Module 24 — Provider protocol with OpenAI and Anthropic implementations"
+prerequisites: [23]
+
+setup:
+  workspace: fresh
+  copy_fixtures:
+    - {from: "fixtures/projects/three-files", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  MOCK_LLM_FIXTURE: "fixtures/llm/read-then-write.json"
+
+tests:
+  - name: "OpenAI provider — three-step loop"
+    type: agent-prompt
+    prompt: "Read a.py, write its summary to summary.txt"
+    timeout_seconds: 30
+    env_overrides:
+      LLM_PROVIDER: "mock"
+      MOCK_PROVIDER_WIRE: "openai"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: file_exists, path: "summary.txt"}
+      - type: tool_call_sequence
+        ordered: true
+        contains:
+          - {name: "Read"}
+          - {name: "Write"}
+
+  - name: "Anthropic provider — three-step loop"
+    type: agent-prompt
+    prompt: "Read a.py, write its summary to summary.txt"
+    timeout_seconds: 30
+    env_overrides:
+      # mock-LLM serves Messages API wire format on /v1/messages
+      LLM_PROVIDER: "mock"
+      MOCK_PROVIDER_WIRE: "anthropic"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: file_exists, path: "summary.txt"}
+      - type: tool_call_sequence
+        ordered: true
+        contains:
+          - {name: "Read"}
+          - {name: "Write"}
+
+  - name: "behavioral parity across providers"
+    type: command
+    # Compare the file contents produced by both providers; should be identical.
+    command: "./agent -p 'Read a.py, write its summary to summary.txt' && cp summary.txt summary.openai.txt && rm summary.txt && LLM_PROVIDER_WIRE=anthropic ./agent -p 'Read a.py, write its summary to summary.txt' && diff summary.txt summary.openai.txt"
+    timeout_seconds: 60
+    assertions:
+      - {type: exit_code, equals: 0}
+
+  - name: "unknown provider errors clearly"
+    type: agent-prompt
+    prompt: "anything"
+    timeout_seconds: 10
+    env_overrides:
+      LLM_PROVIDER: "badname"
+    assertions:
+      - {type: exit_code, not_equals: 0}
+      - {type: stderr_contains, text: "LLM_PROVIDER"}

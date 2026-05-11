@@ -1,0 +1,21 @@
+module: 17-approvals
+description: "Module 17 — approvals"
+prerequisites: [16]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/17-approvals.json"
+
+tests:
+  - name: "n declines write"
+    type: agent-prompt
+    prompt: "Write 'x' to out.txt"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stdin sends 'n\n'; file_absent out.txt
+      - {type: exit_code, equals: 0}

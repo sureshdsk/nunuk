@@ -1,0 +1,21 @@
+module: 05-advertise-tools
+description: "Module 05 — advertise tools"
+prerequisites: [04]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/05-advertise-tools.json"
+
+tests:
+  - name: "Echo tool advertised"
+    type: agent-prompt
+    prompt: "Use the Echo tool to repeat: hi"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stdout contains 'tool call requested: Echo'; tools_advertised_includes ['Echo']
+      - {type: exit_code, equals: 0}

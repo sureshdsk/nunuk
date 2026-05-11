@@ -1,0 +1,21 @@
+module: 15-markdown-render
+description: "Module 15 — markdown render"
+prerequisites: [14]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/15-markdown-render.json"
+
+tests:
+  - name: "code block renders with ANSI in TTY"
+    type: agent-prompt
+    prompt: "Show me a Python hello-world"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching (TTY) ANSI codes present; (piped) plain text
+      - {type: exit_code, equals: 0}

@@ -1,0 +1,21 @@
+module: 34-mcp-client
+description: "Module 34 — mcp client"
+prerequisites: [33]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/34-mcp-client.json"
+
+tests:
+  - name: "external tool callable"
+    type: agent-prompt
+    prompt: "Use the external 'weather' tool for SF"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching tool_call_sequence contains 'weather' (registered via MCP)
+      - {type: exit_code, equals: 0}

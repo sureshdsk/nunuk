@@ -1,0 +1,49 @@
+module: 30-skills
+description: "Module 30 — Discover and invoke 'skills' (packaged instructions + tool whitelists) as virtual tools"
+prerequisites: [29]
+
+setup:
+  workspace: fresh
+  copy_fixtures:
+    - {from: "fixtures/projects/skills-fixture", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+
+tests:
+  - name: "discovered skill is listed"
+    type: command
+    command: "./agent --list-skills"
+    timeout_seconds: 10
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: stdout_contains, text: "summarize-pr"}
+      - {type: stdout_contains, text: "write-changelog"}
+
+  - name: "model invokes skill, body is injected"
+    type: agent-prompt
+    prompt: "Summarize the open PR"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/skill-invocation.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - type: tool_call_sequence
+        contains:
+          - {name: "skill_summarize-pr"}
+      # The skill body should appear in a later message sent to the LLM.
+      - {type: llm_request_contains, text: "Summarize the PR using the following template"}
+
+  - name: "whitelisted tools only"
+    type: agent-prompt
+    prompt: "Run summarize-pr but also try Bash"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/skill-with-disallowed-tool.json"
+    assertions:
+      # Bash is not in summarize-pr's whitelist; agent must refuse.
+      - {type: exit_code, equals: 0}
+      - {type: stderr_contains, text: "not allowed within skill"}
+      - type: tool_call_sequence
+        not_contains:
+          - {name: "Bash"}

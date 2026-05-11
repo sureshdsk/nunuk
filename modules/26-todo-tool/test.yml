@@ -1,0 +1,21 @@
+module: 26-todo-tool
+description: "Module 26 — todo tool"
+prerequisites: [25]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/26-todo-tool.json"
+
+tests:
+  - name: "todos persist within session"
+    type: agent-prompt
+    prompt: "Plan a 3-step refactor and track progress"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching tool_call_sequence has multiple TodoWrite calls; stdout shows todo state
+      - {type: exit_code, equals: 0}

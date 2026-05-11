@@ -1,0 +1,21 @@
+module: 23-prompt-caching
+description: "Module 23 — prompt caching"
+prerequisites: [22]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/23-prompt-caching.json"
+
+tests:
+  - name: "second call uses cache"
+    type: agent-prompt
+    prompt: "[two identical prompts]"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching second response usage.cache_read_input_tokens > 0
+      - {type: exit_code, equals: 0}

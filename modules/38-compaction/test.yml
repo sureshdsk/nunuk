@@ -1,0 +1,21 @@
+module: 38-compaction
+description: "Module 38 — compaction"
+prerequisites: [37]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/38-compaction.json"
+
+tests:
+  - name: "compaction triggered near limit"
+    type: agent-prompt
+    prompt: "[long synthetic history]"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching after compaction, message list is shorter; first non-system message is a summary; behavior preserved
+      - {type: exit_code, equals: 0}

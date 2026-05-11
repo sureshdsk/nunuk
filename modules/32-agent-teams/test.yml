@@ -1,0 +1,47 @@
+module: 32-agent-teams
+description: "Module 32 — A team of workers sharing a TODO list and message bus; parent drains and aggregates"
+prerequisites: [31]
+
+setup:
+  workspace: fresh
+
+env:
+  LLM_PROVIDER: mock
+
+tests:
+  - name: "team drains TODOs without duplication"
+    type: agent-prompt
+    prompt: "Refactor three files: a.py, b.py, c.py — use a team."
+    timeout_seconds: 60
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/team-drain.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      # Each claim/complete fires exactly once per item.
+      - type: tool_call_sequence
+        contains:
+          - {name: "Task", arguments_contain: "\"team\": true"}
+      - {type: stdout_contains, text: "a.py"}
+      - {type: stdout_contains, text: "b.py"}
+      - {type: stdout_contains, text: "c.py"}
+
+  - name: "worker count is bounded"
+    type: agent-prompt
+    prompt: "Spawn 10 workers"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/team-overrequest.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      - {type: stderr_contains, text: "capped at 5"}
+
+  - name: "drain timeout aborts cleanly"
+    type: agent-prompt
+    prompt: "Two TODOs, one worker hangs"
+    timeout_seconds: 20
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/team-hang.json"
+      TEAM_DRAIN_TIMEOUT_S: "5"
+    assertions:
+      - {type: exit_code, not_equals: 0}
+      - {type: stderr_contains, text: "team timed out"}

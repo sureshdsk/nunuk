@@ -1,0 +1,21 @@
+module: 10-read-tool-with-pagination
+description: "Module 10 — read tool with pagination"
+prerequisites: [09]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/10-read-tool-with-pagination.json"
+
+tests:
+  - name: "Read with offset and limit"
+    type: agent-prompt
+    prompt: "Read lines 5-10 of bigfile.txt"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching tool_call_args_match Read offset=5 limit=6
+      - {type: exit_code, equals: 0}

@@ -1,0 +1,21 @@
+module: 36-sandbox-exec
+description: "Module 36 — sandbox exec"
+prerequisites: [35]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/36-sandbox-exec.json"
+
+tests:
+  - name: "rm -rf in /tmp leaves host clean"
+    type: agent-prompt
+    prompt: "Run `rm -rf /` (sandboxed)"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching host filesystem unaffected; agent reports the failure inside sandbox
+      - {type: exit_code, equals: 0}

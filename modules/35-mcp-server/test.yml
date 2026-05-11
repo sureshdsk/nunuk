@@ -1,0 +1,83 @@
+module: 35-mcp-server
+description: "Module 35 — Expose your agent's tools as an MCP server (JSON-RPC over stdio)"
+prerequisites: [34]
+
+setup:
+  workspace: fresh
+  copy_fixtures:
+    - {from: "fixtures/projects/sample", to: "./"}
+
+env:
+  # MCP server tests don't go through the LLM at all — they speak JSON-RPC directly.
+  LLM_PROVIDER: mock
+
+tests:
+  - name: "initialize handshake"
+    type: protocol-rpc
+    spawn: "./agent serve mcp"
+    requests:
+      - jsonrpc: "2.0"
+        id: 1
+        method: "initialize"
+        params:
+          protocolVersion: "2024-11-05"
+          capabilities: {}
+          clientInfo: {name: "nunuk-runner", version: "1"}
+    assertions:
+      - {type: mcp_response_matches, jsonpath: "$.result.protocolVersion", exists: true}
+      - {type: mcp_response_matches, jsonpath: "$.result.capabilities.tools", exists: true}
+      - {type: mcp_response_matches, jsonpath: "$.result.serverInfo.name", exists: true}
+
+  - name: "tools/list returns expected tools"
+    type: protocol-rpc
+    spawn: "./agent serve mcp"
+    requests:
+      - {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2024-11-05", capabilities: {}, clientInfo: {name: "t", version: "1"}}}
+      - {jsonrpc: "2.0", method: "notifications/initialized"}
+      - {jsonrpc: "2.0", id: 2, method: "tools/list"}
+    assertions:
+      - type: mcp_response_matches
+        request_id: 2
+        jsonpath: "$.result.tools[*].name"
+        contains: ["Read", "Write", "Bash", "Edit", "Glob", "Grep"]
+      - type: mcp_response_matches
+        request_id: 2
+        jsonpath: "$.result.tools[?(@.name=='Read')].inputSchema.properties.file_path"
+        exists: true
+
+  - name: "tools/call Read returns content"
+    type: protocol-rpc
+    spawn: "./agent serve mcp"
+    requests:
+      - {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2024-11-05", capabilities: {}, clientInfo: {name: "t", version: "1"}}}
+      - {jsonrpc: "2.0", method: "notifications/initialized"}
+      - jsonrpc: "2.0"
+        id: 2
+        method: "tools/call"
+        params:
+          name: "Read"
+          arguments: {file_path: "hello.txt"}
+    assertions:
+      - type: mcp_response_matches
+        request_id: 2
+        jsonpath: "$.result.content[0].text"
+        contains: "hello world"
+
+  - name: "unknown method returns -32601"
+    type: protocol-rpc
+    spawn: "./agent serve mcp"
+    requests:
+      - {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2024-11-05", capabilities: {}, clientInfo: {name: "t", version: "1"}}}
+      - {jsonrpc: "2.0", id: 2, method: "this/does/not/exist"}
+    assertions:
+      - {type: mcp_response_matches, request_id: 2, jsonpath: "$.error.code", equals: -32601}
+
+  - name: "malformed input does not crash server"
+    type: protocol-rpc
+    spawn: "./agent serve mcp"
+    requests:
+      - "{not valid json"
+      - {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2024-11-05", capabilities: {}, clientInfo: {name: "t", version: "1"}}}
+    assertions:
+      # First message produced an error response; second still succeeded.
+      - {type: mcp_response_matches, request_id: 1, jsonpath: "$.result.protocolVersion", exists: true}

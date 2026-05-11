@@ -1,0 +1,21 @@
+module: 06-execute-tools
+description: "Module 06 — execute tools"
+prerequisites: [05]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/06-execute-tools.json"
+
+tests:
+  - name: "Echo round-trip"
+    type: agent-prompt
+    prompt: "Use Echo to repeat: alpha"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stdout contains 'alpha'; tool_call_sequence contains Echo
+      - {type: exit_code, equals: 0}

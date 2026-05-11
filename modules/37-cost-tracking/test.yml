@@ -1,0 +1,21 @@
+module: 37-cost-tracking
+description: "Module 37 — cost tracking"
+prerequisites: [36]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/37-cost-tracking.json"
+
+tests:
+  - name: "/cost shows non-zero after a turn"
+    type: agent-prompt
+    prompt: "Hello, then /cost"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching stdout includes '$' and a number
+      - {type: exit_code, equals: 0}

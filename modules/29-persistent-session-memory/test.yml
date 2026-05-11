@@ -1,0 +1,21 @@
+module: 29-persistent-session-memory
+description: "Module 29 — persistent session memory"
+prerequisites: [28]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/29-persistent-session-memory.json"
+
+tests:
+  - name: "save and resume"
+    type: command
+    command: "[two-step: write history, --resume]"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching after --resume, session contains prior turns
+      - {type: exit_code, equals: 0}

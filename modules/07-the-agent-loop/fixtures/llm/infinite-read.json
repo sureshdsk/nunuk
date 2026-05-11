@@ -1,0 +1,15 @@
+{
+  "name": "infinite-read",
+  "description": "Always returns a Read tool call. Used to test the iteration cap.",
+  "responses": [
+    {
+      "match": {},
+      "response": {
+        "tool_calls": [
+          {"name": "Read", "arguments": {"file_path": "a.py"}}
+        ]
+      }
+    }
+  ],
+  "on_unmatched": "error"
+}

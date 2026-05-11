@@ -1,0 +1,21 @@
+module: 31-subagents-task-tool
+description: "Module 31 — subagents task tool"
+prerequisites: [30]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/31-subagents-task-tool.json"
+
+tests:
+  - name: "subagent context is isolated"
+    type: agent-prompt
+    prompt: "Use Task to summarize file X"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching parent's tool_call_sequence shows Task once; subagent's internal calls do not appear in parent transcript
+      - {type: exit_code, equals: 0}

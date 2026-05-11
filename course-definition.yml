@@ -1,0 +1,354 @@
+# Single source of truth for course metadata.
+#
+# Schema borrowed from codecrafters-io/course-definitions and adapted:
+#   - tracks: groupings of stages (CC uses "extensions"; tracks fits our cohort cadence better)
+#   - stages: ordered list, each pointing at its instructions.md
+#
+# Keep this in sync with modules/*/test.yml prerequisites. CI verifies via
+# tools/verify_curriculum.py. CURRICULUM.md is generated from this file by
+# tools/generate_curriculum.py — do not hand-edit CURRICULUM.md.
+
+slug: nunuk
+name: "Build Your Own Coding Agent"
+short_name: "Coding Agent"
+release_status: alpha
+
+description_md: |
+  A 12-14 week, 40-module cohort course where you build a Claude-Code 
+  coding agent in Python from scratch. From a single
+  LLM call to a sandboxed, MCP-aware, plan-mode-capable agent with skills,
+  teams, structured output, and stuck-loop detection — usable day-to-day.
+
+languages:
+  - slug: python
+    primary: true
+    runtime: "python>=3.12 (managed via uv)"
+  # Future:
+  # - slug: go
+  # - slug: typescript
+
+# Difficulty levels: very_easy | easy | medium | hard | very_hard
+# Use sparingly — these calibrate cohort pacing. If most modules are "hard"
+# the calibration is wrong.
+
+tracks:
+  - slug: 0-setup
+    name: "Setup"
+    description: "Get your environment ready."
+  - slug: 1-llm-plumbing
+    name: "LLM Plumbing"
+    description: "Talk to an LLM. Stream. Retry. Survive errors."
+  - slug: 2-tool-foundations
+    name: "Tool Foundations"
+    description: "Tools, the agent loop, the seed POC level."
+  - slug: 3-file-ops
+    name: "File Ops"
+    description: "Read, Edit, Glob, Grep — the agent's workspace primitives."
+  - slug: 4-agent-ux
+    name: "Agent UX"
+    description: "REPL, rendering, diffs, approvals, slash commands, cancellation."
+  - slug: 5-robustness
+    name: "Robustness"
+    description: "Truncation, stuck-loop detection, tokens, caching, and the provider abstraction pivot."
+  - slug: 6-planning-memory
+    name: "Planning & Memory"
+    description: "Structured output, todos, plan mode, project memory, sessions, skills."
+  - slug: 7-advanced
+    name: "Advanced"
+    description: "Subagents, agent teams, hooks, MCP client + server, sandboxed exec."
+  - slug: 8-production
+    name: "Production"
+    description: "Cost tracking, compaction, capstone evals."
+
+stages:
+  # Track 0 — Setup
+  - slug: 00-setup
+    track: 0-setup
+    name: "Setup"
+    difficulty: very_easy
+    prerequisites: []
+    description_md_path: modules/00-setup/instructions.md
+
+  # Track 1 — LLM Plumbing
+  - slug: 01-first-llm-call
+    track: 1-llm-plumbing
+    name: "First LLM Call"
+    difficulty: easy
+    prerequisites: [00-setup]
+    description_md_path: modules/01-first-llm-call/instructions.md
+  - slug: 02-system-prompt-and-args
+    track: 1-llm-plumbing
+    name: "System Prompt & Args"
+    difficulty: easy
+    prerequisites: [01-first-llm-call]
+    description_md_path: modules/02-system-prompt-and-args/instructions.md
+  - slug: 03-streaming
+    track: 1-llm-plumbing
+    name: "Streaming"
+    difficulty: medium
+    prerequisites: [02-system-prompt-and-args]
+    description_md_path: modules/03-streaming/instructions.md
+  - slug: 04-retries-and-errors
+    track: 1-llm-plumbing
+    name: "Retries & Errors"
+    difficulty: medium
+    prerequisites: [03-streaming]
+    description_md_path: modules/04-retries-and-errors/instructions.md
+
+  # Track 2 — Tool Foundations
+  - slug: 05-advertise-tools
+    track: 2-tool-foundations
+    name: "Advertise Tools"
+    difficulty: easy
+    prerequisites: [04-retries-and-errors]
+    description_md_path: modules/05-advertise-tools/instructions.md
+  - slug: 06-execute-tools
+    track: 2-tool-foundations
+    name: "Execute Tools"
+    difficulty: medium
+    prerequisites: [05-advertise-tools]
+    description_md_path: modules/06-execute-tools/instructions.md
+  - slug: 07-the-agent-loop
+    track: 2-tool-foundations
+    name: "The Agent Loop"
+    difficulty: medium
+    milestone: true
+    description: "POC milestone — your agent matches the seed POC by the end of this stage."
+    prerequisites: [06-execute-tools]
+    description_md_path: modules/07-the-agent-loop/instructions.md
+  - slug: 08-write-tool
+    track: 2-tool-foundations
+    name: "Write Tool"
+    difficulty: medium
+    prerequisites: [07-the-agent-loop]
+    description_md_path: modules/08-write-tool/instructions.md
+  - slug: 09-bash-tool
+    track: 2-tool-foundations
+    name: "Bash Tool"
+    difficulty: medium
+    prerequisites: [08-write-tool]
+    description_md_path: modules/09-bash-tool/instructions.md
+
+  # Track 3 — File Ops
+  - slug: 10-read-tool-with-pagination
+    track: 3-file-ops
+    name: "Read Tool with Pagination"
+    difficulty: easy
+    prerequisites: [09-bash-tool]
+    description_md_path: modules/10-read-tool-with-pagination/instructions.md
+  - slug: 11-edit-tool
+    track: 3-file-ops
+    name: "Edit Tool"
+    difficulty: hard
+    prerequisites: [10-read-tool-with-pagination]
+    description_md_path: modules/11-edit-tool/instructions.md
+  - slug: 12-glob-tool
+    track: 3-file-ops
+    name: "Glob Tool"
+    difficulty: easy
+    prerequisites: [11-edit-tool]
+    description_md_path: modules/12-glob-tool/instructions.md
+  - slug: 13-grep-tool
+    track: 3-file-ops
+    name: "Grep Tool"
+    difficulty: medium
+    prerequisites: [12-glob-tool]
+    description_md_path: modules/13-grep-tool/instructions.md
+
+  # Track 4 — Agent UX
+  - slug: 14-repl
+    track: 4-agent-ux
+    name: "REPL"
+    difficulty: medium
+    prerequisites: [13-grep-tool]
+    description_md_path: modules/14-repl/instructions.md
+  - slug: 15-markdown-render
+    track: 4-agent-ux
+    name: "Markdown Render"
+    difficulty: medium
+    prerequisites: [14-repl]
+    description_md_path: modules/15-markdown-render/instructions.md
+  - slug: 16-diff-display
+    track: 4-agent-ux
+    name: "Diff Display"
+    difficulty: medium
+    prerequisites: [15-markdown-render]
+    description_md_path: modules/16-diff-display/instructions.md
+  - slug: 17-approvals
+    track: 4-agent-ux
+    name: "Approvals"
+    difficulty: medium
+    prerequisites: [16-diff-display]
+    description_md_path: modules/17-approvals/instructions.md
+  - slug: 18-slash-commands
+    track: 4-agent-ux
+    name: "Slash Commands"
+    difficulty: medium
+    prerequisites: [17-approvals]
+    description_md_path: modules/18-slash-commands/instructions.md
+  - slug: 19-cancellation
+    track: 4-agent-ux
+    name: "Cancellation"
+    difficulty: hard
+    prerequisites: [18-slash-commands]
+    description_md_path: modules/19-cancellation/instructions.md
+
+  # Track 5 — Robustness
+  - slug: 20-history-truncation
+    track: 5-robustness
+    name: "History Truncation"
+    difficulty: hard
+    prerequisites: [19-cancellation]
+    description_md_path: modules/20-history-truncation/instructions.md
+  - slug: 21-stuck-loop-detection
+    track: 5-robustness
+    name: "Stuck-Loop Detection"
+    difficulty: medium
+    description: "Detect repeated, oscillating, or no-op tool-call loops and abort cleanly."
+    prerequisites: [20-history-truncation]
+    description_md_path: modules/21-stuck-loop-detection/instructions.md
+  - slug: 22-token-counting
+    track: 5-robustness
+    name: "Token Counting"
+    difficulty: medium
+    prerequisites: [21-stuck-loop-detection]
+    description_md_path: modules/22-token-counting/instructions.md
+  - slug: 23-prompt-caching
+    track: 5-robustness
+    name: "Prompt Caching"
+    difficulty: hard
+    prerequisites: [22-token-counting]
+    description_md_path: modules/23-prompt-caching/instructions.md
+  - slug: 24-provider-abstraction
+    track: 5-robustness
+    name: "Provider Abstraction"
+    difficulty: very_hard
+    milestone: true
+    description: "The pivot — refactor behind a Provider protocol with OpenAI + Anthropic implementations."
+    prerequisites: [23-prompt-caching]
+    description_md_path: modules/24-provider-abstraction/instructions.md
+
+  # Track 6 — Planning & Memory
+  - slug: 25-structured-output
+    track: 6-planning-memory
+    name: "Structured Output"
+    difficulty: medium
+    description: "Force the final assistant response to validate against a JSON Schema; fall back to re-prompting when the provider lacks native support."
+    prerequisites: [24-provider-abstraction]
+    description_md_path: modules/25-structured-output/instructions.md
+  - slug: 26-todo-tool
+    track: 6-planning-memory
+    name: "Todo Tool"
+    difficulty: easy
+    prerequisites: [25-structured-output]
+    description_md_path: modules/26-todo-tool/instructions.md
+  - slug: 27-plan-mode
+    track: 6-planning-memory
+    name: "Plan Mode"
+    difficulty: medium
+    prerequisites: [26-todo-tool]
+    description_md_path: modules/27-plan-mode/instructions.md
+  - slug: 28-project-memory
+    track: 6-planning-memory
+    name: "Project Memory"
+    difficulty: medium
+    description: "Auto-discover CLAUDE.md / AGENTS.md / SOUL.md / CONVENTIONS.md / .cursorrules / copilot-instructions.md with dedup and byte budget."
+    prerequisites: [27-plan-mode]
+    description_md_path: modules/28-project-memory/instructions.md
+  - slug: 29-persistent-session-memory
+    track: 6-planning-memory
+    name: "Persistent Session Memory"
+    difficulty: medium
+    prerequisites: [28-project-memory]
+    description_md_path: modules/29-persistent-session-memory/instructions.md
+  - slug: 30-skills
+    track: 6-planning-memory
+    name: "Skills"
+    difficulty: medium
+    description: "Discover and invoke skills (packaged instructions + tool whitelists) as virtual tools."
+    prerequisites: [29-persistent-session-memory]
+    description_md_path: modules/30-skills/instructions.md
+
+  # Track 7 — Advanced
+  - slug: 31-subagents-task-tool
+    track: 7-advanced
+    name: "Subagents (Task Tool)"
+    difficulty: hard
+    prerequisites: [30-skills]
+    description_md_path: modules/31-subagents-task-tool/instructions.md
+  - slug: 32-agent-teams
+    track: 7-advanced
+    name: "Agent Teams"
+    difficulty: hard
+    description: "A team of workers sharing a TODO list and message bus; parent drains and aggregates."
+    prerequisites: [31-subagents-task-tool]
+    description_md_path: modules/32-agent-teams/instructions.md
+  - slug: 33-hooks
+    track: 7-advanced
+    name: "Hooks"
+    difficulty: hard
+    prerequisites: [32-agent-teams]
+    description_md_path: modules/33-hooks/instructions.md
+  - slug: 34-mcp-client
+    track: 7-advanced
+    name: "MCP Client"
+    difficulty: hard
+    prerequisites: [33-hooks]
+    description_md_path: modules/34-mcp-client/instructions.md
+  - slug: 35-mcp-server
+    track: 7-advanced
+    name: "MCP Server"
+    difficulty: hard
+    prerequisites: [34-mcp-client]
+    description_md_path: modules/35-mcp-server/instructions.md
+  - slug: 36-sandbox-exec
+    track: 7-advanced
+    name: "Sandbox Exec"
+    difficulty: very_hard
+    prerequisites: [35-mcp-server]
+    description_md_path: modules/36-sandbox-exec/instructions.md
+
+  # Track 8 — Production
+  - slug: 37-cost-tracking
+    track: 8-production
+    name: "Cost Tracking"
+    difficulty: easy
+    prerequisites: [36-sandbox-exec]
+    description_md_path: modules/37-cost-tracking/instructions.md
+  - slug: 38-compaction
+    track: 8-production
+    name: "Compaction"
+    difficulty: hard
+    prerequisites: [37-cost-tracking]
+    description_md_path: modules/38-compaction/instructions.md
+  - slug: 39-capstone
+    track: 8-production
+    name: "Capstone"
+    difficulty: very_hard
+    milestone: true
+    description: "End-to-end: 10 realistic coding tasks against a real or recorded provider."
+    prerequisites: [38-compaction]
+    description_md_path: modules/39-capstone/instructions.md
+
+# Cohort cadence (informational — used by tools/generate_curriculum.py to populate
+# the "Locked status" table). Modify per cohort.
+cadence:
+  modules_per_week: 3
+  total_weeks: 14
+  release_schedule:
+    - week: 1
+      tracks: [0-setup, 1-llm-plumbing]
+    - week: 2
+      tracks: [2-tool-foundations]
+    - week: 3
+      tracks: [3-file-ops]
+    - weeks: [4, 5]
+      tracks: [4-agent-ux]
+    - weeks: [6, 7]
+      tracks: [5-robustness]
+    - weeks: [8, 9, 10]
+      tracks: [6-planning-memory]
+    - weeks: [11, 12]
+      tracks: [7-advanced]
+    - weeks: [13, 14]
+      tracks: [8-production]

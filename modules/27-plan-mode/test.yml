@@ -1,0 +1,21 @@
+module: 27-plan-mode
+description: "Module 27 — plan mode"
+prerequisites: [26]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/27-plan-mode.json"
+
+tests:
+  - name: "plan mode refuses Write"
+    type: agent-prompt
+    prompt: "Refactor app.py"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching no Write tool calls; stdout contains markdown plan headings
+      - {type: exit_code, equals: 0}

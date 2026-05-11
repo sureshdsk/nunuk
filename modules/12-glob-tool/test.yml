@@ -1,0 +1,21 @@
+module: 12-glob-tool
+description: "Module 12 — glob tool"
+prerequisites: [11]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/12-glob-tool.json"
+
+tests:
+  - name: "glob *.py"
+    type: agent-prompt
+    prompt: "Find all .py files"
+    timeout_seconds: 30
+    assertions:
+      # TODO: replace with assertions matching tool_call_args_match Glob pattern='**/*.py'
+      - {type: exit_code, equals: 0}

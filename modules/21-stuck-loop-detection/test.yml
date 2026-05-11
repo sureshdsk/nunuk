@@ -1,0 +1,47 @@
+module: 21-stuck-loop-detection
+description: "Module 21 — Detect repeated, oscillating, or no-op tool-call loops and abort cleanly"
+prerequisites: [20]
+
+setup:
+  workspace: fresh
+  # copy_fixtures:
+  #   - {from: "fixtures/projects/...", to: "./"}
+
+env:
+  LLM_PROVIDER: mock
+  # MOCK_LLM_FIXTURE: "fixtures/llm/21-stuck-loop-detection.json"
+
+tests:
+  - name: "repeat triggers warn then abort"
+    type: agent-prompt
+    prompt: "Find the missing config"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/repeat-read.json"
+    assertions:
+      # TODO: replace with assertions matching:
+      #   - tool_call_sequence shows Read("nope.txt") at least 3 times
+      #   - stderr_contains "stuck loop" (or similar marker)
+      #   - exit_code != 0
+      - {type: exit_code, equals: 0}
+
+  - name: "oscillation detected by 5th call"
+    type: agent-prompt
+    prompt: "Compare two files"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/abab-oscillation.json"
+    assertions:
+      # TODO: replace with assertions matching detector fires before call 6
+      - {type: exit_code, equals: 0}
+
+  - name: "useful work is not a false positive"
+    type: agent-prompt
+    prompt: "Summarize the project"
+    timeout_seconds: 30
+    env_overrides:
+      MOCK_LLM_FIXTURE: "fixtures/llm/six-distinct-calls.json"
+    assertions:
+      - {type: exit_code, equals: 0}
+      # No "stuck loop" marker in output
+      - {type: stdout_matches_regex, pattern: "^(?!.*stuck loop).*$"}

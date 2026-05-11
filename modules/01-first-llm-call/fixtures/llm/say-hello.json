@@ -1,0 +1,11 @@
+{
+  "name": "say-hello",
+  "description": "Returns 'hello' to any user message containing 'hello'.",
+  "responses": [
+    {
+      "match": {"last_user_message_contains": "hello"},
+      "response": {"content": "hello"}
+    }
+  ],
+  "on_unmatched": "fallback_text"
+}
